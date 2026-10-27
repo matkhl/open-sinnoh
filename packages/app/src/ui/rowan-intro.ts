@@ -15,6 +15,7 @@ import type { Art } from './art.ts';
 import { el } from './core.ts';
 import { MESSAGE, place, sceneContext } from './evolution.ts';
 import './evolution.css';
+import { S } from '../strings/index.ts';
 
 const W = 256;
 const H = 192;
@@ -34,8 +35,9 @@ export function introScale(width: number, height: number, dpr: number): number {
 }
 
 /**
- * The backdrop's rows: each row of the imported picture is one colour (read at runtime, so nothing of the ROM is
- * stored); a row of more than one colour fails loudly, as the backdrop could then not run on past the screen.
+ * The backdrop's rows as they run on past the screen: each row's colour at the screen's edges (read at runtime, so
+ * nothing of the ROM is stored). The ADVENTURE INFO backdrop has its box in the middle, so only the edges count; a
+ * row whose left and right edges differ fails loudly, as the backdrop could then not run on past the screen.
  */
 function bandRows(img: HTMLImageElement, c: Ui2dSheet['cells'][number]): string[] {
   const canvas = document.createElement('canvas');
@@ -44,17 +46,16 @@ function bandRows(img: HTMLImageElement, c: Ui2dSheet['cells'][number]): string[
   const g = canvas.getContext('2d', { willReadFrequently: true })!;
   g.drawImage(img, c.x, c.y, c.w, c.h, 0, 0, c.w, c.h);
   const px = g.getImageData(0, 0, c.w, c.h).data;
+  const colour = (x: number, y: number) => {
+    const i = (y * c.w + x) * 4;
+    if (px[i + 3]! < 255) throw new Error(`ui: the intro backdrop's row ${y} is not opaque at x ${x}`);
+    return `rgb(${px[i]} ${px[i + 1]} ${px[i + 2]})`;
+  };
   const rows: string[] = [];
   for (let y = 0; y < c.h; y++) {
-    const counts = new Map<string, number>();
-    for (let x = 0; x < c.w; x++) {
-      const i = (y * c.w + x) * 4;
-      if (px[i + 3]! < 255) continue;
-      const k = `rgb(${px[i]} ${px[i + 1]} ${px[i + 2]})`;
-      counts.set(k, (counts.get(k) ?? 0) + 1);
-    }
-    if (counts.size !== 1) throw new Error(`ui: the intro backdrop's row ${y} has ${counts.size} opaque colours, not one`);
-    rows.push([...counts.keys()][0]!);
+    const [left, right] = [colour(0, y), colour(c.w - 1, y)];
+    if (left !== right) throw new Error(`ui: the intro backdrop's row ${y} ends in two colours (${left}, ${right})`);
+    rows.push(left);
   }
   return rows;
 }
@@ -169,7 +170,8 @@ class IntroScene {
       if (!this.drawCell('intro/ball', 'screen', 0, 0)) this.standInBall();
       if (v.ball && this.art.sheet('intro/ball')) this.drawCell('intro/ball', v.ball, 0, 0);
     } else {
-      if (v.backdrop && !bands && !this.drawCell('intro/backdrops', v.backdrop, 0, 0)) {
+      // The backdrop on the screen (the ADVENTURE INFO box is in it); the bands only run it on past the screen.
+      if (v.backdrop && !this.drawCell('intro/backdrops', v.backdrop, 0, 0) && !bands) {
         g.fillStyle = v.backdrop === 'plain' ? '#e8e0a8' : '#9cc8f0';
         g.fillRect(0, 0, W, H);
       }
@@ -259,7 +261,7 @@ class IntroScene {
       const button = el('button', 'intro-ball');
       button.type = 'button';
       button.dataset.tap = 'ball';
-      button.setAttribute('aria-label', 'The button on the Poké Ball');
+      button.setAttribute('aria-label', S.aria.ballButton);
       button.addEventListener('click', () => d.tap('ball'));
       place(button, BALL_BUTTON);
       parts.push(button);
@@ -273,7 +275,7 @@ class IntroScene {
         const b = el('button', 'intro-avatar');
         b.type = 'button';
         b.dataset.tap = kind;
-        b.setAttribute('aria-label', kind === 'boy' ? 'Boy' : 'Girl');
+        b.setAttribute('aria-label', kind === 'boy' ? S.aria.boy : S.aria.girl);
         b.setAttribute('aria-pressed', String((v.gender === 'male') === (kind === 'boy')));
         b.addEventListener('click', () => d.tap(kind));
         place(b, rect);
