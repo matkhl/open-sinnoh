@@ -52,6 +52,7 @@ export const DE: Strings = {
     notHgss: (names) => `Das ist kein unterstütztes HeartGold- oder SoulSilver-ROM. Das Begleiter-Add-on braucht ${names}, einen unveränderten Dump mit passendem SHA-1.`,
     or: ' oder ',
     quota: 'Dem Browser ist beim Import der Speicher ausgegangen. Schaffe etwas Platz auf deinem Gerät und wähle die Datei dann noch einmal.',
+    storageAborted: 'Der Browser hat das Speichern des Imports abgebrochen. Das passiert, wenn die Seite in den Hintergrund geht (eine andere App, ein gesperrter Bildschirm) oder das Gerät fast voll ist. Lass OpenSinnoh bis zum Ende des Imports im Vordergrund geöffnet, schaffe bei Bedarf etwas Platz und wähle die Datei dann noch einmal.',
     importFailed: (message) => `Import fehlgeschlagen: ${message}`,
     workerCrashed: 'Der Import ist abgestürzt (zu wenig Arbeitsspeicher?).',
     importFailedHeading: 'Der Import ist fehlgeschlagen',

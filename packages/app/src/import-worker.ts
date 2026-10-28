@@ -11,7 +11,7 @@ import { ADDON_VERSION, IMPORTER_VERSION, runAddonImporter, runImporter } from '
 import { jsonBytes } from './json-bytes.ts';
 import { verifyRom } from './rom-check.ts';
 import { S, setLanguage, type Language } from './strings/index.ts';
-import { checkImport, deleteImport, importKey, openDb, PACK_DATA_PATH, putFiles, putMeta, type ImportMeta } from './store.ts';
+import { checkImport, deleteImport, importKey, openDb, PACK_DATA_PATH, putFiles, putMeta, StorageAbortedError, type ImportMeta } from './store.ts';
 
 /** `addon`: the file was given as the optional HeartGold/SoulSilver ROM (anything else is refused then); `language`: the page's, for the messages. */
 export type ImportRequest = { rom: File; addon?: boolean; language: Language };
@@ -74,6 +74,8 @@ self.onmessage = async (e: MessageEvent<ImportRequest>) => {
     if (db && key) await deleteImport(db, key).catch((e: Error) => console.error(`could not remove the partial import: ${e.message}`));
     db?.close();
     if ((err as Error).name === 'QuotaExceededError') return post({ type: 'error', message: S.rom.quota, ...(sha1 ? { sha1 } : {}) });
-    post({ type: 'error', message: S.rom.importFailed((err as Error).message), thrown: (err as Error).stack ?? '', ...(sha1 ? { sha1 } : {}) });
+    // Still reported: the cause (the page suspended, or a full device) is not known for sure.
+    const message = err instanceof StorageAbortedError ? S.rom.storageAborted : S.rom.importFailed((err as Error).message);
+    post({ type: 'error', message, thrown: (err as Error).stack ?? '', ...(sha1 ? { sha1 } : {}) });
   }
 };

@@ -52,6 +52,7 @@ export const EN = {
     notHgss: (names: string) => `This is not a supported HeartGold or SoulSilver ROM. The follower add-on needs ${names}, an unmodified dump with a matching SHA-1.`,
     or: ' or ',
     quota: 'The browser ran out of storage space during the import. Free some space on your device, then choose the file again.',
+    storageAborted: 'The browser stopped saving the import. This happens when the page goes to the background (another app, a locked screen) or the device is nearly full. Keep OpenSinnoh open in front until the import is done, free some space if needed, then choose the file again.',
     importFailed: (message: string) => `Import failed: ${message}`,
     workerCrashed: 'The import worker crashed (out of memory?).',
     importFailedHeading: 'The import failed',
