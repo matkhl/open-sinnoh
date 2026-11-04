@@ -36,6 +36,7 @@ a reviewed step: bump `CONTRACTS_VERSION` and add a line below.
   replays, stepped by `date`/`time` lines. Periods are core `dayPeriod(hour)` (decomp TimeOfDayForHour).
 
 ## Changelog
+- 0.49.3 (back to the title, on 0.49.2; same schema v23; importer platinum-113): the start menu's result `quit?` (EXIT asked to go back to the title screen; OpenSinnoh, not the DS).
 - 0.49.2 (the one-pocket bag, on 0.49.1; same schema v23): `BagView.pocketTypes` (the DS pocket type each listed pocket is drawn as), so the `pick` and `poffin` bags, which list one pocket, draw it instead of failing.
 - 0.49.1 (replays that wait, on 0.49.0; same schema v23; importer platinum-112): `ScriptView.waitsForAB?` (a script waits for A or B with no arrow: ScrCmd_WaitABPress, ScrCmd_WaitABPadPress). Replays: `advance message [max]`; `assert state <path> <record id>`; `assert text` slot values may be record ids; the Easy Chat tap `word:<text id>`.
 - 0.49.0 (the German game, on 0.48.0; same schema v23; importer platinum-112): `NewGame.language?` (the game's Gen 4 language id: 2 English, 5 German; absent = English). Core `Dex.language` reads it, and `createPokemon` gives new Pokémon that language unless told otherwise. `ScriptView.yesNo` is `{ yes, no, cursor }` (the labels from the ROM, MenuEntries_Text_Yes/No). `MYSTERY_GIFTS` lost `title`/`description`; `MYSTERY_GIFT_TEXT` holds them per language.

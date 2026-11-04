@@ -119,11 +119,11 @@ describe('createGame', () => {
     expect(game.state.tick).toBe(2);
   });
 
-  it('says whether the last tick stepped the field: not while the start menu holds it (the renderer draws the last step)', () => {
+  it('says whether the last tick stepped the field (not while the start menu holds it), and hands over the quit from EXIT once', () => {
     let close = false;
     const createApp: CreateApp = () => ({
       view: () => ({ app: 'start-menu' }) as never,
-      step: () => (close ? { app: 'start-menu' } : null),
+      step: () => (close ? { app: 'start-menu', quit: true } : null),
     });
     const game = createGame(options({ createApp }));
     // The room intro message first.
@@ -145,6 +145,9 @@ describe('createGame', () => {
     game.tick();
     expect(game.app()).toBeNull();
     expect(game.fieldStepped()).toBe(false);
+    // EXIT's quit is taken once by the app.
+    expect(game.takeQuitRequest()).toBe(true);
+    expect(game.takeQuitRequest()).toBe(false);
     game.tick();
     expect(game.fieldStepped()).toBe(true);
   });
