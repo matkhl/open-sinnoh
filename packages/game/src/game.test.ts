@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { setupPokemon, type CreateScriptRunner, type CreateWorld, type InputFrame, type ScriptView } from '@opensinnoh/contracts';
+import { setupPokemon, type CreateApp, type CreateScriptRunner, type CreateWorld, type InputFrame, type ScriptView } from '@opensinnoh/contracts';
 import type { Id, PackData } from '@opensinnoh/core';
 import { applyButtonMode, BUTTON_MODE, computePressed, InputState } from './input.ts';
 import { createGame, reloadGame, type GameOptions } from './game.ts';
@@ -117,6 +117,36 @@ describe('createGame', () => {
     game.tick();
     expect(order).toEqual(['triggers a', 'vm a', 'world a', 'vm ', 'world a']);
     expect(game.state.tick).toBe(2);
+  });
+
+  it('says whether the last tick stepped the field: not while the start menu holds it (the renderer draws the last step)', () => {
+    let close = false;
+    const createApp: CreateApp = () => ({
+      view: () => ({ app: 'start-menu' }) as never,
+      step: () => (close ? { app: 'start-menu' } : null),
+    });
+    const game = createGame(options({ createApp }));
+    // The room intro message first.
+    game.advance(2);
+    game.press('a');
+    game.advance(2);
+    game.release('a');
+    game.advance(2);
+    expect(game.canSave()).toBe(true);
+    expect(game.fieldStepped()).toBe(true);
+    game.press('x');
+    game.tick();
+    game.release('x');
+    expect(game.app()).not.toBeNull();
+    expect(game.fieldStepped()).toBe(false);
+    game.tick();
+    expect(game.fieldStepped()).toBe(false);
+    close = true;
+    game.tick();
+    expect(game.app()).toBeNull();
+    expect(game.fieldStepped()).toBe(false);
+    game.tick();
+    expect(game.fieldStepped()).toBe(true);
   });
 
   it('owns the PRNG in state', () => {

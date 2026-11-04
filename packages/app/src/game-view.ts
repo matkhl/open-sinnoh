@@ -608,9 +608,10 @@ export async function mountGame(source: PackSource, opts: GameOptions): Promise<
     // A pixel ratio change alone (another monitor, device emulation) fires no resize, and the canvases would keep
     // the old ratio (the battle scene drawn at the wrong scale): lay out again.
     if ((devicePixelRatio || 1) !== layoutDpr) relayout();
-    // Once the battle scene covers the field, the field is not drawn (nor loaded) under it. While a battle
-    // runs the world does not tick: the field is drawn at its last tick, not interpolated toward it (an
-    // alpha between two stale ticks jittered the camera, the encounter "shake").
+    // Once the battle scene covers the field, the field is not drawn (nor loaded) under it. While the world
+    // does not step (a battle, an open menu) the field is drawn at its last step, not interpolated toward it:
+    // an alpha between two stale steps jittered the camera and sprites (the encounter "shake", and a menu
+    // opened while running flickering a step back and forth).
     // The DS STEREO/MONO option (saved with the game; decomp Sound_SetPlaybackMode).
     audio.setMono(session.game.state.options.sound === 1);
     // The synth's sequencer follows the game: the speed asked for, or what the machine manages when behind.
@@ -619,7 +620,7 @@ export async function mountGame(source: PackSource, opts: GameOptions): Promise<
     if (speedIndicator.hidden !== (speed === 1)) speedIndicator.hidden = speed === 1;
     if (speed !== 1 && speedIndicator.textContent !== `>> ${speed}x`) speedIndicator.textContent = `>> ${speed}x`;
     battleCovers = battle.covers();
-    if (!battleCovers) session.renderer.render(session.game.inBattle() ? 1 : alpha);
+    if (!battleCovers) session.renderer.render(session.game.inBattle() || !session.game.fieldStepped() ? 1 : alpha);
     // The count matters only under the full black (`revealing`); elsewhere the scene's loading is not asked for (it
     // builds the world's view again) and the field counts as complete.
     const black = (session.game.world.fadeState()?.alpha ?? 0) >= 1;

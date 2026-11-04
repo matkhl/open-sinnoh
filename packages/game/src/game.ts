@@ -195,6 +195,11 @@ export interface Game {
   readonly battle: Battle | null;
   /** A battle was started and has not ended (it may still be loading its engine). */
   inBattle(): boolean;
+  /**
+   * The last tick stepped the world. False while a menu app, the start menu, a battle or the clear holds the field:
+   * its actors and camera keep the previous step's prev/cur, so the field is drawn at cur, not interpolated.
+   */
+  fieldStepped(): boolean;
   /** The setup of the battle started and not ended (the app preloads its art from it), else null. */
   battleSetup(): BattleSetup | null;
   /** Answers the running battle's prompt (`Battle.choose`); throws when no battle waits. */
@@ -1014,6 +1019,13 @@ export function createGame(options: GameOptions): Game {
     }
   };
 
+  /** Set by `stepWorld`, cleared at the start of each `step` (`Game.fieldStepped`). */
+  let fieldStepped = false;
+  const stepWorld = (frame: InputFrame) => {
+    fieldStepped = true;
+    world.step(frame);
+  };
+
   /** One tick of game time: the tick counter and, every 30 ticks, a second of play time. */
   const countTick = () => {
     state.tick++;
@@ -1046,6 +1058,7 @@ export function createGame(options: GameOptions): Game {
       return battle?.run ?? null;
     },
     inBattle: () => battle !== null,
+    fieldStepped: () => fieldStepped,
     battleSetup: () => battle?.setup ?? null,
     battleChoose(choice) {
       if (!battle?.run) throw new Error(`battleChoose: no battle is running (${JSON.stringify(choice)})`);
@@ -1110,6 +1123,7 @@ export function createGame(options: GameOptions): Game {
     blackOutScreen: () => blackOutView(),
     poketch: () => poketchModel()?.view() ?? null,
     step(raw) {
+      fieldStepped = false;
       // After the clear's credits the DS resets: nothing runs until a load or a new game.
       if (clear?.phase === 'reset') return;
       // The BUTTON MODE option remaps every key read (decomp ApplyButtonModeToInput).
@@ -1201,7 +1215,7 @@ export function createGame(options: GameOptions): Game {
       if (talk.active()) {
         talk.step();
         scripts.step(frame);
-        world.step(NO_INPUT);
+        stepWorld(NO_INPUT);
         countTick();
         return;
       }
@@ -1216,7 +1230,7 @@ export function createGame(options: GameOptions): Game {
         if (!blackOut && talk.tryStart(frame)) {
           popup.hide();
           scripts.step(frame);
-          world.step(NO_INPUT);
+          stepWorld(NO_INPUT);
           countTick();
           return;
         }
@@ -1233,7 +1247,7 @@ export function createGame(options: GameOptions): Game {
         }
       }
       scripts.step(frame);
-      world.step(frame);
+      stepWorld(frame);
       repel.after(repelBefore);
       talk.stepMood();
       stepPoketch(frame);

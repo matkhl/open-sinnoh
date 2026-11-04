@@ -50,8 +50,10 @@ changelog lives in [`docs/contracts.md`](contracts.md); scope and the core rules
   `cli`. Packages depend on `@opensinnoh/contracts` and `@opensinnoh/core`, not on each other's internals.
 - **Simulation tick = 30 Hz.** The decomp's main loop runs once per two vblanks; only the print task runs
   twice. Every timing ported from a SysTask counts one decomp frame per tick. Rendering interpolates at
-  display rate. We swept for code that ran two decomp frames a tick (gauges, cut-ins, fades, evolution,
-  the catch, key repeat) and fixed it.
+  display rate, but only after a tick that stepped the world (`Game.fieldStepped`): while a menu, a battle
+  or the clear holds the field, it is drawn at its last step (a stale prev/cur pair made it flicker). We
+  swept for code that ran two decomp frames a tick (gauges, cut-ins, fades, evolution, the catch, key
+  repeat) and fixed it.
 - **Determinism.** The game is a pure function of seed, inputs and the clock option. Saved RNG streams:
   the main stream (`GameState.rng`), `encounterRng`, `fieldRng`, and per-object wander streams seeded
   from (game seed, zone, local id). The DS uses one global LCRNG; separate streams keep systems from
