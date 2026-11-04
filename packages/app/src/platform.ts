@@ -1,5 +1,6 @@
 /** Browser platform bits: storage persistence and estimate, service worker and updates, install prompt, iOS install hint. */
 import { standalone } from './phone.ts';
+import { leavePage } from './leave.ts';
 import { S } from './strings/index.ts';
 
 export function formatBytes(n: number): string {
@@ -114,7 +115,7 @@ export async function applyUpdate(): Promise<void> {
       next.addEventListener('statechange', () => (next.state === 'activated' || next.state === 'redundant') && resolve());
       next.postMessage('skip-waiting');
     });
-  location.reload();
+  leavePage(() => location.reload());
 }
 
 /** The browser's install prompt (Chromium, Android): kept until the player asks for it. Safari installs from its Share menu. */

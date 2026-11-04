@@ -30,6 +30,7 @@ import type { SetupQuestion } from './title/setup-questions.ts';
 import { splashDone, splashPhase } from './splash.ts';
 import { installTouchGuards } from './touch.ts';
 import { watchForUpdate } from './update-toast.ts';
+import { leavePage } from './leave.ts';
 import { addContextSource, breadcrumb, captureError, initTelemetry, installGlobalHandlers, setTag } from './telemetry/index.ts';
 import { chooseLanguage, language, S, setLanguage, type Language } from './strings/index.ts';
 import { readKeyboardLayout } from './controls.ts';
@@ -102,7 +103,7 @@ function fail(message: string, sha1?: string, heading?: string): void {
 }
 
 function goHome(): void {
-  location.replace(location.pathname);
+  leavePage(() => location.replace(location.pathname));
 }
 
 /** An import that did not happen: the message is the player's (a wrong file, no room); `heading` names a failure that is not the file's. */
@@ -434,7 +435,7 @@ async function start(): Promise<void> {
       // its progress, then Start playing; a refused file shows on its picker).
       importRom: importFromGame,
       addAddon: (file) => importFromGame(file, true),
-      reimport: () => location.replace(`${location.pathname}?reimport`),
+      reimport: () => leavePage(() => location.replace(`${location.pathname}?reimport`)),
       remove: async () => {
         await deleteImport(db, current.key);
         if (addon) await deleteImport(db, addon.key);

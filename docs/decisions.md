@@ -505,6 +505,11 @@ changelog lives in [`docs/contracts.md`](contracts.md); scope and the core rules
   asks first in the save window (our words; NO stays), then the DS's save question; YES saves, and either answer
   reloads the page to the title without `?continue`. The suspend point is cleared and not written on the way out, so
   NO really leaves the unsaved play behind.
+- **A reload the player did not mean asks first** (F5, a stray swipe, closing the tab): the browser's own "Leave
+  site?" question, in production builds, once more than 10 seconds were played since the last SAVE or the start of
+  play. The suspend point is written while it asks, since a write started as the page unloads can be lost. OpenSinnoh's
+  own reloads (EXIT, the clear's reset, an update, a reimport, the crash screen) go through `leavePage` and never ask.
+  Dev and test builds ask only with `?ask-leave`: Vite and the specs reload on their own.
 - **The objective:** the start menu shows the next story beat in a field window beside it (above it on phones), on
   by default. It is derived, never tracked: an ordered table in the pack (`NewGame.objectives`, our words, written by
   the importer) whose first step with no check holding is shown; each step also lists a later beat that proves it

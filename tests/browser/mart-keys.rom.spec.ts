@@ -36,15 +36,14 @@ for (const key of ['Enter', 'Space', 'KeyZ'])
     await page.waitForFunction(() => !!window.openSinnohApp && !document.querySelector('.at-title') && window.openSinnohApp.loop.ticks > 60, undefined, { timeout: 60_000 });
     type Mart = { app: string; mode?: string; quantity?: { count: string } | null; yesNo?: object | null };
     const mart = () => page.evaluate(() => window.openSinnohApp!.game.app() as unknown as Mart | null);
-    // Talk to the clerk (the game's A), and A on any field message before the mart's BUY / SELL menu (one press
-    // too many would already pick BUY).
-    await page.keyboard.press('KeyZ');
+    // Talk to the clerk (the game's A) while the field is idle (a loaded machine can drop a press made as the field
+    // settles), and A on any field message before the mart's BUY / SELL menu (one press too many would already pick BUY).
     await expect.poll(async () => {
       const m = await mart();
       if (m) return m.mode;
-      if (await page.evaluate(() => window.openSinnohApp!.game.scripts.view().message?.waitingForInput === true)) await page.keyboard.press('KeyZ');
+      if (await page.evaluate(() => window.openSinnohApp!.game.canSave() || window.openSinnohApp!.game.scripts.view().message?.waitingForInput === true)) await page.keyboard.press('KeyZ');
       return null;
-    }, { timeout: 20_000 }).toBe('menu');
+    }, { timeout: 30_000 }).toBe('menu');
     await page.keyboard.press(key);
     await expect.poll(async () => (await mart())?.mode).toBe('buy');
     await page.keyboard.press(key);

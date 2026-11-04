@@ -7,6 +7,7 @@
  */
 import { banner, button, h, snapPixels, titleTab } from '@opensinnoh/ui';
 import { isChunkError } from '../chunk.ts';
+import { leavePage } from '../leave.ts';
 import { splashDone } from '../splash.ts';
 import { ImportIncompleteError } from '../store.ts';
 import { S } from '../strings/index.ts';
@@ -62,7 +63,7 @@ export function crash(err: unknown, where: string, opts: CrashOptions = {}): voi
       ),
   });
   copy.classList.add('crash-copy');
-  const reload = button(S.crash.reload, { icon: 'reset', ...(damaged && opts.secondary ? {} : { variant: 'primary' as const }), onClick: () => location.reload() });
+  const reload = button(S.crash.reload, { icon: 'reset', ...(damaged && opts.secondary ? {} : { variant: 'primary' as const }), onClick: () => leavePage(() => location.reload()) });
   reload.classList.add('crash-reload');
   const actions = h('div', 'crash-actions', reload, copy);
   if (opts.secondary) {

@@ -18,6 +18,7 @@ import { CONTROL_SIZES, fullscreenSupported, HAPTIC_MS, hapticsSupported, readPh
 import { applyUpdate, canInstall, promptInstall, requestPersistence, storageLine, storageStatus, updateWaiting, type StorageStatus } from './platform.ts';
 import { saveImportMessage } from './save-errors.ts';
 import { setPlaying } from './update-toast.ts';
+import { leavePage, leavingOnPurpose } from './leave.ts';
 import { splashDone, splashPhase } from './splash.ts';
 import { FAST_SPEEDS, FastForward, readFastSpeed, storeFastSpeed, type FastSpeed } from './speed.ts';
 import { toggleMod, type PackSource } from './pack-source.ts';
@@ -69,6 +70,8 @@ export interface GameOptions {
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const SAVE_SLOT = 'main';
+/** Ticks of play after a SAVE (or the start of play) that a reload may lose without asking: 10 seconds. */
+const UNSAVED_GRACE = 300;
 /** Its own database: the app's `lantern-nds` database holds the imported packs. */
 const SAVES_DB = 'lantern-nds-saves'; // pre-rename name, kept: players' stored data uses it
 const MAX_SAVE_FILE = 2 * 1024 * 1024;
@@ -162,9 +165,11 @@ export async function mountGame(source: PackSource, opts: GameOptions): Promise<
   const suspend = createSuspend({ game: () => session.game, store: saves, on: () => !opts.replay && suspendOn() });
   // The device: stored options and the save slot the start menu's SAVE writes (a failed write is shown).
   let ui: InGameUi | null = null;
+  /** Ticks played since the last SAVE or the start of play (the unsaved-progress question below). */
+  let unsavedTicks = 0;
   const device = createDevice({
     log: () => session.game.log,
-    write: (save) => saves.put(SAVE_SLOT, save),
+    write: (save) => saves.put(SAVE_SLOT, save).then(() => void (unsavedTicks = 0)),
     failed: (message) => (ui ? ui.notice(message) : console.error(message)),
     touch: matchMedia('(pointer: coarse)').matches,
   });
@@ -412,6 +417,7 @@ export async function mountGame(source: PackSource, opts: GameOptions): Promise<
     if (import.meta.env.DEV && recorder) recorder.frame(lastInput, session.game);
     session.tick(lastInput);
     if (!opts.replay) suspend.tick();
+    unsavedTicks++;
     if (import.meta.env.DEV && recorder) recorder.observe(session.game);
     ticks++;
     // After the clear's credits the DS resets to the title (decomp OS_ResetSystem): once the clear's save is
@@ -419,7 +425,7 @@ export async function mountGame(source: PackSource, opts: GameOptions): Promise<
     const cleared = session.game.hasReset() ? session.game.resetSave() : null;
     if (cleared && !opts.replay && !resetting) {
       resetting = true;
-      void saves.put(SAVE_SLOT, cleared).then(() => location.reload());
+      void saves.put(SAVE_SLOT, cleared).then(() => leavePage(() => location.reload()));
     }
     // The start menu's EXIT (after its save question): back to the title by a reload, as above, without `?continue`
     // (the installed app's shortcut would skip the title again). The suspend point goes first and none is written as the
@@ -431,7 +437,7 @@ export async function mountGame(source: PackSource, opts: GameOptions): Promise<
       void suspend
         .loaded()
         .catch((e: Error) => console.error(`suspend: not cleared (${e.message})`))
-        .then(() => location.replace(url));
+        .then(() => leavePage(() => location.replace(url)));
     }
   };
   let resetting = false;
@@ -743,6 +749,18 @@ export async function mountGame(source: PackSource, opts: GameOptions): Promise<
       awake.show();
     }
   });
+  // A reload or close the player did not mean asks first while there is unsaved progress (leave.ts): more than
+  // UNSAVED_GRACE ticks since the last SAVE or the start of play (closing the save's message takes a few seconds).
+  // The suspend point is written now, while the question shows: a write started as the page unloads can be lost.
+  // Production builds only: dev and test builds reload on their own (Vite, the specs) and ask with `?ask-leave`.
+  const askBeforeLeaving = import.meta.env.PROD || new URLSearchParams(location.search).has('ask-leave');
+  addEventListener('beforeunload', (e) => {
+    if (!askBeforeLeaving || opts.replay || titleActive || leavingOnPurpose() || unsavedTicks < UNSAVED_GRACE) return;
+    void suspend.hide().catch((err: Error) => console.error(`suspend: not kept (${err.message})`));
+    e.preventDefault();
+    // Safari before 17 asks only for a set returnValue.
+    e.returnValue = true;
+  });
   // Leaving for good (not into the back/forward cache): close the save database's connection.
   addEventListener('pagehide', (e) => !e.persisted && saves.close());
   const loopTick = () => {
@@ -879,7 +897,7 @@ export async function mountGame(source: PackSource, opts: GameOptions): Promise<
       }
       await saves.put(SAVE_SLOT, saveFromJson(text) as SaveEnvelope);
       // The title read its save when it opened: start again so CONTINUE shows this one.
-      location.reload();
+      leavePage(() => location.reload());
       return S.game.savedRestarting;
     },
     rom: imported && {
@@ -1051,6 +1069,7 @@ export async function mountGame(source: PackSource, opts: GameOptions): Promise<
     });
     titleActive = false;
     titleRoot = null;
+    unsavedTicks = 0;
     input.clear('keyboard');
     root.classList.remove('at-title');
     relayout();
