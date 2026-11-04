@@ -449,8 +449,9 @@ changelog lives in [`docs/contracts.md`](contracts.md); scope and the core rules
   to the field and keeps the decomp's saved data (the memo is lost on app change, as on the DS); its
   timers count game ticks so replays are exact.
 - **Keyboard and accessibility:** menus trap Tab, follow the game cursor with focus and restore focus on
-  close; Escape is B outside text fields. Canvas-drawn messages are read once per finished page into a
-  polite live region.
+  close; Escape is B outside text fields. A question, action menu, waiting message or count (the mart's) makes
+  the rest of the screen inert, so focus and Space/Enter go to it, not to the row picked before it. Canvas-drawn
+  messages are read once per finished page into a polite live region.
 - **Input:** physical key codes (arrows/WASD, Z/J/Space = A, X/K = B, …); gamepads map positionally.
   Options › Controls rebinds keys and pad buttons; replays use logical buttons only.
 - **Touch controls** are one layout (`computeLayout`) for the title, menus, intro and field: d-pad and
