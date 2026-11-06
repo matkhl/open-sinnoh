@@ -1,7 +1,7 @@
 /**
  * A reload the player did not mean (OPENSINNOH_NDS_ROM; desktop): with unsaved progress the browser asks first
  * (game-view.ts `beforeunload`, leave.ts), and the suspend point is written while it asks, so a reload that goes
- * ahead still CONTINUEs where the player stood. Within seconds of starting play there is nothing to ask about.
+ * ahead still CONTINUEs where the player stood. It is also stored every few seconds of play, before any question. Within seconds of starting play there is nothing to ask about.
  * Leaving after all (the question accepted) reloads into the game where the player stood.
  */
 import { expect, test, type Page } from '@playwright/test';
@@ -63,6 +63,9 @@ test('a reload with unsaved progress asks first and keeps the suspend point', as
   const start = await page.evaluate(() => window.openSinnohApp!.game.state.tick);
   await page.keyboard.press('ArrowUp');
   await page.waitForFunction((start) => window.openSinnohApp!.game.state.tick > start + 330 && window.openSinnohApp!.game.canSave(), start, { timeout: 120_000 });
+  // Stored while playing (suspend.ts), before any hide or question: a reload that never asks still comes back near here.
+  const storedTick = async () => (JSON.parse((await slot(page, 'suspend')) ?? '{"state":{"tick":-1}}') as { state: { tick: number } }).state.tick;
+  await expect.poll(storedTick, { timeout: 15_000 }).toBeGreaterThan(start);
   const stood = await page.evaluate(() => window.openSinnohApp!.game.state.player);
   // The player's reload: asked, and staying keeps the game running; the suspend point is in.
   await page.close({ runBeforeUnload: true });

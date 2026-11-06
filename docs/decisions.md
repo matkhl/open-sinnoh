@@ -498,18 +498,21 @@ changelog lives in [`docs/contracts.md`](contracts.md); scope and the core rules
   art and font, their words in the pack.
 - **On by default:** auto-run with the Running Shoes on touch screens (B held walks); repeat Repel
   (HGSS's prompt); a registered-item wheel of four on a held Y; Pokédex name search; intro skip once a
-  device has seen Rowan's intro; a suspend point when the page hides; follower talk with the HGSS add-on
-  (its global interaction rules; mood is not saved); auto lowercase after the first capital on the naming
-  keyboard (not Platinum's); trade evolutions without a trade (labelled, off is faithful).
+  device has seen Rowan's intro; a suspend point, stored every few seconds of idle play and when the page hides;
+  follower talk with the HGSS add-on (its global interaction rules; mood is not saved); auto lowercase after the
+  first capital on the naming keyboard (not Platinum's); trade evolutions without a trade (labelled, off is
+  faithful).
 - **The start menu's EXIT goes back to the title** (not the DS's, where it only closes the menu, as B still does): it
   asks first in the save window (our words; NO stays), then the DS's save question; YES saves, and either answer
   reloads the page to the title without `?continue`. The suspend point is cleared and not written on the way out, so
   NO really leaves the unsaved play behind.
 - **A reload the player did not mean asks first** (F5, a stray swipe, closing the tab): the browser's own "Leave
   site?" question, in production builds, once more than 10 seconds were played since the last SAVE or the start of
-  play. The suspend point is written while it asks, since a write started as the page unloads can be lost. OpenSinnoh's
-  own reloads (EXIT, the clear's reset, an update, a reimport, the crash screen) go through `leavePage` and never ask.
-  Dev and test builds ask only with `?ask-leave`: Vite and the specs reload on their own.
+  play. The suspend point is written while it asks, since a write started as the page unloads can be lost; it is also
+  stored at each idle moment of play (every three seconds), so a reload that never asks (the browser's choice, or
+  within the 10 seconds) still CONTINUEs a few seconds back at most. OpenSinnoh's own reloads (EXIT, the clear's
+  reset, an update, a reimport, the crash screen) go through `leavePage` and never ask. Dev and test builds ask only
+  with `?ask-leave`: Vite and the specs reload on their own.
 - **The objective:** the start menu shows the next story beat in a field window beside it (above it on phones), on
   by default. It is derived, never tracked: an ordered table in the pack (`NewGame.objectives`, our words, written by
   the importer) whose first step with no check holding is shown; each step also lists a later beat that proves it

@@ -161,8 +161,9 @@ export async function mountGame(source: PackSource, opts: GameOptions): Promise<
     }
   };
   const saves = new IndexedDbSaveStore(SAVES_DB);
-  // The suspend point (suspend.ts): kept when the page hides, outside the title; never in replays.
-  const suspend = createSuspend({ game: () => session.game, store: saves, on: () => !opts.replay && suspendOn() });
+  // The suspend point (suspend.ts): stored while playing and when the page hides, outside the title; never in
+  // replays, and not on EXIT's way to the title (it was cleared there).
+  const suspend = createSuspend({ game: () => session.game, store: saves, on: () => !opts.replay && !quitting && suspendOn() });
   // The device: stored options and the save slot the start menu's SAVE writes (a failed write is shown).
   let ui: InGameUi | null = null;
   /** Ticks played since the last SAVE or the start of play (the unsaved-progress question below). */
